@@ -215,6 +215,16 @@
 								// Returning non-false is the same as a continue statement in a for loop; it will skip immediately to the next iteration.
 								return true;
 							}
+							if( (typeof CKEDITOR !== 'undefined') && field.is("textarea") ) {
+								var editor = CKEDITOR.instances[field.attr( "id" )];
+								if ( editor ) {
+									if( editor.checkDirty() ) {
+										$( "textarea#" + field.attr("id") ).val( editor.getData() );
+										editor.resetDirty();
+									}
+								}
+							}
+
 							var prefix = self.href + targetFormId + field.attr( "name" ) + self.options.customKeyPrefix;
 							var value = field.val();
 
@@ -253,7 +263,7 @@
 					var restored = false;
 
 					if ( $.isFunction( self.options.onBeforeRestore ) ) {
-						self.options.onBeforeRestore.call(self);
+						self.options.onBeforeRestore.call();
 					}
 
 					self.targets.each( function() {
@@ -372,8 +382,10 @@
 					var targetForms = self.targets;
 					setTimeout( ( function( targetForms ) {
 						function timeout() {
-							self.saveAllData();
-							setTimeout( timeout, self.options.timeout * 1000 );
+							if (self.options.timeout) {
+								self.saveAllData();
+								setTimeout( timeout, self.options.timeout * 1000 );
+							}
 						}
 						return timeout;
 					} )( targetForms ), self.options.timeout * 1000 );
@@ -391,6 +403,7 @@
 						var fieldsToProtect = target.find( ":input" ).not( ":submit" ).not( ":reset" ).not( ":button" ).not( ":file" );
 						var formId = target.attr( "id" );
 						$( this ).bind( "submit reset", function() {
+							self.options.timeout = 0;
 							self.releaseData( formId, fieldsToProtect );
 						} );
 					} );
